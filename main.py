@@ -70,8 +70,8 @@ if st.sidebar.button("CALCULAR Y GENERAR EXPLICACIÓN"):
         # DERIVADA
         st.markdown('<div class="pizarra"><div class="titulo-seccion">I. Análisis Diferencial (Derivada)</div></div>',
                     unsafe_allow_html=True)
-        st.latex(f"f'(x) = \\frac{{d}}{{dx}}[{sp.latex(f)}] = {sp.latex(derivada)}")
-
+        st.latex(f"f'(x) = \\frac{{d}}{{dx}}[{sp.latex(f)}] = {sp.latex(sp.trigsimp(derivada))}")
+        
         # INTEGRAL
         st.markdown('<div class="pizarra"><div class="titulo-seccion">II. Análisis Integral (Antiderivada)</div></div>',
                     unsafe_allow_html=True)
@@ -125,3 +125,4 @@ if st.sidebar.button("CALCULAR Y GENERAR EXPLICACIÓN"):
 
     except Exception as e:
         st.error(f"Error en el motor CAS: {e}")
+
