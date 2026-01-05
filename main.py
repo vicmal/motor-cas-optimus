@@ -5,8 +5,15 @@ import matplotlib.pyplot as plt
 import os
 import re
 
-# 1. CONFIGURACIÓN DE LA PÁGINA
-st.set_page_config(page_title="Optimus Prime CAS - Ing. Víctor Malavé", layout="wide")
+# 1. CONFIGURACIÓN DE LA PÁGINA (SEO MEJORADO)
+st.set_page_config(
+    page_title="Calculadora de Derivadas e Integrales - Ing. Víctor Malavé",
+    page_icon="🤖",
+    layout="wide",
+    menu_items={
+        'About': "# Motor CAS Optimus Prime\nCreado por el Ing. Víctor Hugo Malavé Girón para fines académicos."
+    }
+)
 
 # 2. ESTILO CSS
 st.markdown("""
@@ -19,18 +26,12 @@ st.markdown("""
         border-left: 6px solid #00e676;
         font-family: 'Courier New', Courier, monospace;
         margin-top: 15px;
-        margin-bottom: 10px;
     }
     .titulo-seccion { color: #00e676; font-weight: bold; text-transform: uppercase; }
-    .autor { color: #90caf9; font-style: italic; font-size: 0.9em; }
+    .autor { color: #90caf9; font-style: italic; font-size: 1.1em; }
     .alerta-sintaxis {
-        background-color: #fff3cd;
-        color: #856404;
-        padding: 10px;
-        border-radius: 5px;
-        font-size: 0.85em;
-        border: 1px solid #ffeeba;
-        margin-bottom: 10px;
+        background-color: #fff3cd; color: #856404; padding: 10px;
+        border-radius: 5px; font-size: 0.85em; border: 1px solid #ffeeba;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -43,7 +44,7 @@ with col1:
 
 with col2:
     st.title("CALCULADORA DE DERIVADAS E INTEGRALES OPTIMUS PRIME")
-    st.markdown("<p class='autor'>Desarrollado por: <b>Ing. Víctor Hugo Malavé Girón</b></p>", unsafe_allow_html=True)
+    st.markdown("<p class='autor'>Autor: <b>Ing. Víctor Hugo Malavé Girón</b></p>", unsafe_allow_html=True)
 
 # --- FUNCIÓN DE LIMPIEZA DE SINTAXIS ---
 def corregir_sintaxis(texto):
@@ -51,67 +52,83 @@ def corregir_sintaxis(texto):
     texto = re.sub(r'(\))(\()', r'\1*\2', texto)
     return texto.replace("^", "**")
 
-# 4. BARRA LATERAL CON ADVERTENCIA
-st.sidebar.header("CONFIGURACIÓN")
+# 4. BARRA LATERAL
+st.sidebar.header("MENÚ DE CÁLCULO")
 
-# RECUADRO DE ADVERTENCIA PEDAGÓGICA
-st.sidebar.markdown("""
-    <div class="alerta-sintaxis">
-        ⚠️ <b>IMPORTANTE:</b> Para productos, usa siempre el asterisco (*). <br>
-        Ejemplo: Escribe <b>2*x</b> en lugar de 2x; <b>x*cos(x)</b> en lugar de xcos(x).
-    </div>
-    """, unsafe_allow_html=True)
+# --- SECCIÓN DE EJEMPLOS PARA EXAMEN ---
+st.sidebar.subheader("📝 Ejemplos para Examen")
+ejemplos = {
+    "Personalizado": "",
+    "Básico: Polinomios": "x^3 - 5*x^2 + 2",
+    "Trigonométrico: tan(2x)": "tan(2*x)",
+    "Producto: x * cos(x)": "x * cos(x)",
+    "Exponencial: e^(-x^2)": "exp(-x^2)",
+    "Fracciones: 1/(x^2 + 1)": "1/(x^2 + 1)",
+    "Desafío: 1/(2 + cos(x))": "1/(2 + cos(x))"
+}
+seleccion = st.sidebar.selectbox("Selecciona un reto clásico:", list(ejemplos.keys()))
 
-input_usuario = st.sidebar.text_input("Ingresa f(x):", "tan(2*x)")
+# Si selecciona un ejemplo, se precarga en el input
+input_default = ejemplos[seleccion] if seleccion != "Personalizado" else "tan(2*x)"
+
+st.sidebar.markdown('<div class="alerta-sintaxis">⚠️ Usa * para multiplicar (ej: 2*x)</div>', unsafe_allow_html=True)
+input_usuario = st.sidebar.text_input("Función f(x):", value=input_default)
 lim_a = st.sidebar.number_input("Límite inferior (a):", value=0.0)
 lim_b = st.sidebar.number_input("Límite superior (b):", value=1.0)
 
-if st.sidebar.button("CALCULAR Y EXPLICAR"):
+if st.sidebar.button("EJECUTAR ANÁLISIS"):
     try:
         x = sp.symbols('x')
         f_limpia = corregir_sintaxis(input_usuario)
         f = sp.sympify(f_limpia)
         
-        # OPERACIONES CON SIMPLIFICACIÓN
+        # OPERACIONES
         derivada = sp.trigsimp(sp.diff(f, x))
         integral_indef = sp.trigsimp(sp.integrate(f, x))
         integral_def = sp.integrate(f, (x, lim_a, lim_b))
 
-        # --- RESULTADOS ---
-        st.subheader("📝 Resultados del Análisis")
+        # --- MOSTRAR RESULTADOS ---
+        st.subheader("📝 Análisis Simbólico y Numérico")
         
-        # DERIVADA
-        st.markdown('<div class="pizarra"><div class="titulo-seccion">I. Análisis Diferencial</div></div>', unsafe_allow_html=True)
-        st.latex(f"f'(x) = \\frac{{d}}{{dx}}[{sp.latex(f)}] = {sp.latex(derivada)}")
+        st.markdown('<div class="pizarra"><div class="titulo-seccion">I. Cálculo Diferencial</div></div>', unsafe_allow_html=True)
+        st.latex(f"f'(x) = {sp.latex(derivada)}")
         
-        # INTEGRAL
-        st.markdown('<div class="pizarra"><div class="titulo-seccion">II. Análisis Integral</div></div>', unsafe_allow_html=True)
-        st.latex(f"\\int {sp.latex(f)} dx = {sp.latex(integral_indef)} + C")
+        st.markdown('<div class="pizarra"><div class="titulo-seccion">II. Cálculo Integral</div></div>', unsafe_allow_html=True)
+        st.latex(f"\\int f(x)dx = {sp.latex(integral_indef)} + C")
         
-        st.success(f"**Área bajo la curva en el intervalo [{lim_a}, {lim_b}]:** {float(integral_def):.4f}")
+        st.success(f"**Resultado Integral Definida:** {float(integral_def.evalf()):.4f}")
 
-        # EXPLICACIÓN DETALLADA
-        with st.expander("📚 VER PROCEDIMIENTO ACADÉMICO"):
-            st.markdown("### 1. Derivación")
-            st.write(f"Se ha aplicado la derivada simbólica a la función. Resultado: ${sp.latex(derivada)}$.")
-            
-            st.markdown("### 2. Integración")
-            st.write(f"Se ha determinado la primitiva mediante algoritmos CAS. Resultado: ${sp.latex(integral_indef)}$.")
+        # TEORÍA PASO A PASO
+        with st.expander("🎓 VER EXPLICACIÓN DEL PROCEDIMIENTO"):
+            st.write(f"""
+            1. **Derivación:** El motor aplicó reglas de derivación simbólica para obtener f'(x).
+            2. **Integración:** Se halló la primitiva mediante el Algoritmo de Risch.
+            3. **Evaluación:** Se aplicó el Segundo Teorema Fundamental del Cálculo en el intervalo [{lim_a}, {lim_b}].
+            """)
 
-        # GRÁFICA CON CUADRÍCULA
+        # GRÁFICA
         st.subheader("📊 Visualización")
         f_num = sp.lambdify(x, f, "numpy")
-        x_v = np.linspace(float(lim_a)-1, float(lim_b)+1, 400)
+        x_v = np.linspace(float(lim_a)-2, float(lim_b)+2, 400)
         y_v = f_num(x_v)
         
         fig, ax = plt.subplots(figsize=(10, 4))
         ax.plot(x_v, y_v, color="#1E88E5", lw=2)
         ax.fill_between(x_v, y_v, where=(x_v>=lim_a)&(x_v<=lim_b), color='#00e676', alpha=0.3)
-        ax.grid(True, linestyle='--', alpha=0.6) # CUADRÍCULA
+        ax.grid(True, linestyle='--', alpha=0.6)
         ax.set_facecolor('#1e1e1e')
         fig.patch.set_facecolor('#0e1117')
         ax.tick_params(colors='white')
         st.pyplot(fig)
 
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Error CAS: {e}")
+
+# PIE DE PÁGINA PARA SEO
+st.markdown("---")
+st.markdown("""
+<p style='text-align: center; color: gray; font-size: 0.8em;'>
+Búsquedas relacionadas: Calculadora de integrales paso a paso, derivada de la tangente, 
+regla de la cadena, área bajo la curva, Ing. Víctor Hugo Malavé Girón, Cálculo Infinitesimal.
+</p>
+""", unsafe_allow_html=True)
