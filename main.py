@@ -1,148 +1,97 @@
 import streamlit as st
-import numpy as np
 import sympy as sp
+import numpy as np
 import matplotlib.pyplot as plt
-from sympy.integrals.manualintegrate import manualintegrate, integral_steps
 
-# --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="Optimus Prime: Motor CAS", layout="wide")
+# 1. CONFIGURACIÓN DE LA PÁGINA (Título en la pestaña del navegador)
+st.set_page_config(page_title="Calculadora de Integrales Optimus Prime", layout="wide")
 
-# --- ESTILOS CSS PERSONALIZADOS ---
+# 2. ESTILO CSS PARA LA "PIZARRA"
 st.markdown("""
     <style>
-    .main { background: radial-gradient(circle, #1a2a3a 0%, #050a0f 100%); color: #ecf0f1; }
-    h1 { text-shadow: 2px 2px 4px black; color: #e74c3c; font-weight: bold; text-align: center; margin-bottom: 20px; }
     .pizarra {
-        background-color: #fdf6e3; color: #073642; padding: 30px; 
-        border-radius: 12px; border: 8px solid #856404;
-        font-family: 'serif'; margin-top: 20px;
-        box-shadow: 10px 10px 20px rgba(0,0,0,0.6);
-        line-height: 1.6;
+        background-color: #263238;
+        color: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        border: 5px solid #455A64;
+        font-family: 'Courier New', Courier, monospace;
+        margin-bottom: 20px;
     }
-    .paso-titulo { color: #b58900; font-weight: bold; border-bottom: 1px solid #eee; margin-top: 15px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- TÍTULO ---
-st.markdown("<h1>🤖 OPTIMUS PRIME: MOTOR CAS DEFINITIVE V10</h1>", unsafe_allow_html=True)
+# 3. ENCABEZADO CON IMAGEN Y TÍTULO NUEVO
+col1, col2 = st.columns([1, 4])
 
-# --- SIDEBAR ---
-with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712139.png", width=100)  # Icono de robot
-    st.header("Configuración de Cálculo")
-    func_input = st.text_input("Ingresa f(x):", value="(x^4 + 2*x^2 + 2*x + 1) / (x^2 + 1)^2")
+with col1:
+    # Intenta cargar la imagen localmente.
+    # Asegúrate de subir tu imagen a GitHub con el nombre 'optimus.png'
+    try:
+        st.image("optimus.png", width=150)
+    except:
+        st.write("🤖")  # Icono de respaldo si no encuentra la imagen
 
-    col1, col2 = st.columns(2)
-    with col1:
-        lim_a = st.number_input("Límite a:", value=0.0)
-    with col2:
-        lim_b = st.number_input("Límite b:", value=3.1416)
+with col2:
+    st.title("CALCULADORA DE INTEGRALES OPTIMUS PRIME DE R")
+    st.write("Motor de Cálculo Simbólico Avanzado para Ingeniería, desarrollado por Víctor Hugo Malavé Girón")
 
-    btn_ejecutar = st.button("EJECUTAR PROCESO", type="primary", use_container_width=True)
-    st.info("Soporta: log(x), exp(x), sin(x), sqrt(x), potencias ^ o **")
+# 4. ENTRADA DE DATOS
+st.sidebar.header("CONFIGURACIÓN DE CÁLCULO")
+funcion_input = st.sidebar.text_input("Ingresa la función f(x):", "x^2 * sin(x)")
+lim_a = st.sidebar.number_input("Límite inferior (a):", value=0.0)
+lim_b = st.sidebar.number_input("Límite superior (b):", value=3.14159)
 
+# Procesar la función para que Python la entienda (cambiar ^ por **)
+funcion_python = funcion_input.replace("^", "**")
 
-# --- FUNCIONES DE APOYO PARA EL "PASO A PASO" ---
-def obtener_pasos(expr, var):
-    """Genera una explicación simplificada basada en el árbol de pasos de SymPy"""
-    steps = integral_steps(expr, var)
-
-    def format_step(step, level=0):
-        lines = []
-        indent = "&nbsp;" * (level * 4)
-
-        if hasattr(step, 'substep'):
-            lines.append(f"<div class='paso-titulo'>Aplicando: {type(step).__name__}</div>")
-            lines.append(format_step(step.substep, level + 1))
-        elif hasattr(step, 'substeps'):
-            lines.append(f"<div class='paso-titulo'>Estrategia: {type(step).__name__}</div>")
-            for s in step.substeps:
-                lines.append(format_step(s, level + 1))
-        else:
-            # Caso base: mostrar la regla aplicada
-            regla = type(step).__name__.replace("Rule", "")
-            lines.append(f"{indent} • Regla de <b>{regla}</b>")
-        return "".join(lines)
-
-    return format_step(steps)
-
-
-# --- LÓGICA PRINCIPAL ---
-if btn_ejecutar:
+if st.sidebar.button("EJECUTAR PROCESO"):
     try:
         x = sp.symbols('x')
-        # Limpieza de entrada
-        expr_clean = func_input.replace("^", "**")
-        f_sym = sp.sympify(expr_clean)
+        f = sp.sympify(funcion_python)
 
-        # Cálculos Analíticos
-        integral_indef = sp.integrate(f_sym, x)
-        area_exacta = sp.integrate(f_sym, (x, lim_a, lim_b))
+        # CÁLCULOS CAS
+        integral_indef = sp.integrate(f, x)
+        integral_def = sp.integrate(f, (x, lim_a, lim_b))
+        derivada = sp.diff(f, x)  # Añadimos derivada por si quieres verla
 
-        # Descomposición (Fracciones Parciales)
-        f_descompuesta = sp.apart(f_sym) if f_sym.is_rational_function() else f_sym
+        # MOSTRAR RESULTADOS EN LA "PIZARRA"
+        st.subheader("Pizarra de Procedimientos")
 
-        # Mostrar Resultados
-        tab1, tab2 = st.tabs(["📝 Pizarra de Procedimiento", "📊 Análisis Gráfico"])
+        with st.container():
+            st.markdown(f"""
+            <div class="pizarra">
+                <h3>ANÁLISIS DE LA FUNCIÓN</h3>
+                <p><b>Función original:</b></p>
+            </div>
+            """, unsafe_allow_html=True)
+            st.latex(sp.latex(f))
 
-        with tab1:
-            st.markdown('<div class="pizarra">', unsafe_allow_html=True)
-            st.write("### 📜 Memoria de Cálculo Detallada")
+            st.markdown('<div class="pizarra"><p><b>Antiderivada (Integral Indefinida):</b></p></div>',
+                        unsafe_allow_html=True)
+            # Simplificamos la respuesta para que no sea tan abrumadora
+            st.latex(sp.latex(sp.simplify(integral_indef)) + " + C")
 
-            # Paso 1: Análisis
-            st.write("#### 1. Análisis de la Función")
-            st.latex(rf"f(x) = {sp.latex(f_sym)}")
+            st.markdown('<div class="pizarra"><p><b>Resultado Numérico (Integral Definida):</b></p></div>',
+                        unsafe_allow_html=True)
+            st.success(f"El área bajo la curva es: {float(integral_def):.4f}")
 
-            # Paso 2: Estrategia (Fracciones Parciales / Sustitución)
-            if f_sym != f_descompuesta:
-                st.write("#### 2. Simplificación por Fracciones Parciales")
-                st.write("La función es racional, descomponiendo el denominador:")
-                st.latex(rf"f(x) = {sp.latex(f_descompuesta)}")
+        # GRÁFICA
+        st.subheader("Visualización Gráfica")
+        f_num = sp.lambdify(x, f, "numpy")
+        x_vals = np.linspace(float(lim_a) - 2, float(lim_b) + 2, 400)
+        y_vals = f_num(x_vals)
 
-            # Paso 3: El "Paso a Paso" automático
-            st.write("#### 3. Algoritmo de Integración")
-            try:
-                explicacion = obtener_pasos(f_sym, x)
-                st.markdown(explicacion, unsafe_allow_html=True)
-            except:
-                st.write("Se aplicó integración directa por reglas fundamentales.")
+        fig, ax = plt.subplots()
+        ax.plot(x_vals, y_vals, label=f"f(x) = {funcion_input}", color="blue")
+        ax.fill_between(x_vals, y_vals, where=(x_vals >= lim_a) & (x_vals <= lim_b), color='skyblue', alpha=0.4)
+        ax.axhline(0, color='black', lw=1)
+        ax.axvline(0, color='black', lw=1)
+        ax.legend()
+        ax.grid(True, linestyle='--')
 
-            # Paso 4: Resultado final
-            st.write("#### 4. Antiderivada Final")
-            st.latex(rf"F(x) = {sp.latex(integral_indef)} + C")
-
-            # Paso 5: Evaluación de límites
-            st.write("#### 5. Evaluación de la Integral Definida")
-            st.latex(rf"\int_{{{lim_a}}}^{{{lim_b}}} f(x) dx = {sp.latex(area_exacta)}")
-
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        with tab2:
-            st.metric("Área Aproximada", f"{float(area_exacta.evalf()):.6f} u²")
-
-            # Generar datos para el gráfico
-            f_num = sp.lambdify(x, f_sym, modules=['numpy'])
-            x_range = np.linspace(float(lim_a) - 1, float(lim_b) + 1, 500)
-            y_range = f_num(x_range)
-
-            fig, ax = plt.subplots(figsize=(10, 5))
-            fig.patch.set_facecolor('#1a2a3a')
-            ax.set_facecolor('#1a2a3a')
-
-            # Dibujar área y función
-            ax.plot(x_range, y_range, color='#3498db', label=f"f(x)")
-            x_fill = np.linspace(float(lim_a), float(lim_b), 200)
-            ax.fill_between(x_fill, f_num(x_fill), color='#e74c3c', alpha=0.4, label="Área bajo la curva")
-
-            # Estilo de ejes
-            ax.axhline(0, color='white', linewidth=0.8)
-            ax.axvline(0, color='white', linewidth=0.8)
-            ax.tick_params(colors='white')
-            for spine in ax.spines.values(): spine.set_color('white')
-            ax.legend()
-            st.pyplot(fig)
+        st.pyplot(fig)
 
     except Exception as e:
-        st.error(f"Error en el Motor CAS: {e}")
-else:
-    st.info("Ingrese una función y presione el botón para iniciar el análisis.")
+        st.error(f"Error en el procesamiento: {e}")
+        st.info("Asegúrate de escribir la función correctamente (ejemplo: x^2 o sin(x))")
