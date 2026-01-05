@@ -33,7 +33,7 @@ with col1:
         st.write("🤖")  # Icono de respaldo si no encuentra la imagen
 
 with col2:
-    st.title("CALCULADORA DE INTEGRALES OPTIMUS PRIME DE R")
+    st.title("CALCULADORA DE INTEGRALES")
     st.write("Motor de Cálculo Simbólico Avanzado para Ingeniería, desarrollado por Víctor Hugo Malavé Girón")
 
 # 4. ENTRADA DE DATOS
@@ -95,3 +95,4 @@ if st.sidebar.button("EJECUTAR PROCESO"):
     except Exception as e:
         st.error(f"Error en el procesamiento: {e}")
         st.info("Asegúrate de escribir la función correctamente (ejemplo: x^2 o sin(x))")
+
