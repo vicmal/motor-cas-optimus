@@ -3,11 +3,12 @@ import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import re
 
 # 1. CONFIGURACIÓN DE LA PÁGINA
 st.set_page_config(page_title="Optimus Prime CAS - Ing. Víctor Malavé", layout="wide")
 
-# 2. ESTILO CSS PARA LA PIZARRA Y CRÉDITOS
+# 2. ESTILO CSS
 st.markdown("""
     <style>
     .pizarra {
@@ -19,110 +20,98 @@ st.markdown("""
         font-family: 'Courier New', Courier, monospace;
         margin-top: 15px;
         margin-bottom: 10px;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
     }
-    .titulo-seccion {
-        color: #00e676;
-        font-weight: bold;
-        text-transform: uppercase;
-        font-size: 1.1em;
-    }
-    .autor {
-        color: #90caf9;
-        font-style: italic;
-        font-size: 0.9em;
+    .titulo-seccion { color: #00e676; font-weight: bold; text-transform: uppercase; }
+    .autor { color: #90caf9; font-style: italic; font-size: 0.9em; }
+    .alerta-sintaxis {
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 0.85em;
+        border: 1px solid #ffeeba;
+        margin-bottom: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. ENCABEZADO: LOGO, TÍTULO Y CRÉDITOS
+# 3. ENCABEZADO
 col1, col2 = st.columns([1, 5])
 with col1:
-    if os.path.exists("optimus.png"):
-        st.image("optimus.png", width=120)
-    else:
-        st.write("🤖")
+    if os.path.exists("optimus.png"): st.image("optimus.png", width=120)
+    else: st.write("🤖")
 
 with col2:
     st.title("CALCULADORA DE DERIVADAS E INTEGRALES OPTIMUS PRIME")
     st.markdown("<p class='autor'>Desarrollado por: <b>Ing. Víctor Hugo Malavé Girón</b></p>", unsafe_allow_html=True)
-    st.write("### Motor de Cálculo Infinitesimal | Recurso Académico CAS")
 
-# 4. BARRA LATERAL
-st.sidebar.header("ENTRADA DE DATOS")
-funcion_input = st.sidebar.text_input("Ingresa f(x):", "x^2 * sin(x)")
+# --- FUNCIÓN DE LIMPIEZA DE SINTAXIS ---
+def corregir_sintaxis(texto):
+    texto = re.sub(r'(\d)([a-zA-Z\(])', r'\1*\2', texto)
+    texto = re.sub(r'(\))(\()', r'\1*\2', texto)
+    return texto.replace("^", "**")
+
+# 4. BARRA LATERAL CON ADVERTENCIA
+st.sidebar.header("CONFIGURACIÓN")
+
+# RECUADRO DE ADVERTENCIA PEDAGÓGICA
+st.sidebar.markdown("""
+    <div class="alerta-sintaxis">
+        ⚠️ <b>IMPORTANTE:</b> Para productos, usa siempre el asterisco (*). <br>
+        Ejemplo: Escribe <b>2*x</b> en lugar de 2x; <b>x*cos(x)</b> en lugar de xcos(x).
+    </div>
+    """, unsafe_allow_html=True)
+
+input_usuario = st.sidebar.text_input("Ingresa f(x):", "tan(2*x)")
 lim_a = st.sidebar.number_input("Límite inferior (a):", value=0.0)
-lim_b = st.sidebar.number_input("Límite superior (b):", value=3.1415)
+lim_b = st.sidebar.number_input("Límite superior (b):", value=1.0)
 
-if st.sidebar.button("CALCULAR Y GENERAR EXPLICACIÓN"):
+if st.sidebar.button("CALCULAR Y EXPLICAR"):
     try:
         x = sp.symbols('x')
-        f = sp.sympify(funcion_input.replace("^", "**"))
-
-        # OPERACIONES CAS
-        derivada = sp.diff(f, x)
-        integral_indef = sp.integrate(f, x)
+        f_limpia = corregir_sintaxis(input_usuario)
+        f = sp.sympify(f_limpia)
+        
+        # OPERACIONES CON SIMPLIFICACIÓN
+        derivada = sp.trigsimp(sp.diff(f, x))
+        integral_indef = sp.trigsimp(sp.integrate(f, x))
         integral_def = sp.integrate(f, (x, lim_a, lim_b))
 
-        # --- SECCIÓN DE RESULTADOS ---
+        # --- RESULTADOS ---
         st.subheader("📝 Resultados del Análisis")
-
+        
         # DERIVADA
-        st.markdown('<div class="pizarra"><div class="titulo-seccion">I. Análisis Diferencial (Derivada)</div></div>',
-                    unsafe_allow_html=True)
-        st.latex(f"f'(x) = \\frac{{d}}{{dx}}[{sp.latex(f)}] = {sp.latex(sp.trigsimp(derivada))}")
+        st.markdown('<div class="pizarra"><div class="titulo-seccion">I. Análisis Diferencial</div></div>', unsafe_allow_html=True)
+        st.latex(f"f'(x) = \\frac{{d}}{{dx}}[{sp.latex(f)}] = {sp.latex(derivada)}")
         
         # INTEGRAL
-        st.markdown('<div class="pizarra"><div class="titulo-seccion">II. Análisis Integral (Antiderivada)</div></div>',
-                    unsafe_allow_html=True)
-        st.latex(f"\\int f(x) dx = \\int {sp.latex(f)} dx = {sp.latex(sp.simplify(integral_indef))} + C")
+        st.markdown('<div class="pizarra"><div class="titulo-seccion">II. Análisis Integral</div></div>', unsafe_allow_html=True)
+        st.latex(f"\\int {sp.latex(f)} dx = {sp.latex(integral_indef)} + C")
+        
+        st.success(f"**Área bajo la curva en el intervalo [{lim_a}, {lim_b}]:** {float(integral_def):.4f}")
 
-        # VALOR NUMÉRICO
-        st.success(f"**Resultado de la Integral Definida (Área):** {float(integral_def):.4f}")
+        # EXPLICACIÓN DETALLADA
+        with st.expander("📚 VER PROCEDIMIENTO ACADÉMICO"):
+            st.markdown("### 1. Derivación")
+            st.write(f"Se ha aplicado la derivada simbólica a la función. Resultado: ${sp.latex(derivada)}$.")
+            
+            st.markdown("### 2. Integración")
+            st.write(f"Se ha determinado la primitiva mediante algoritmos CAS. Resultado: ${sp.latex(integral_indef)}$.")
 
-        # --- SECCIÓN DE TEORÍA ACADÉMICA DETALLADA ---
-        with st.expander("📚 EXPLICACIÓN ACADÉMICA DEL PROCEDIMIENTO"):
-            st.markdown("### 1. Procedimiento de Derivación")
-            st.write(f"""
-            Para hallar la derivada de **{funcion_input}**, el motor utiliza el método de **Diferenciación Automática Simbólica**. 
-            Dependiendo de la estructura de tu función, se aplican las siguientes reglas:
-            - **Regla de la Potencia:** $\\frac{{d}}{{dx}}x^n = nx^{{n-1}}$.
-            - **Regla del Producto/Cadena:** Si tu función tiene multiplicaciones o funciones compuestas (como senos o logaritmos), se descompone internamente en operadores elementales.
-            """)
-
-            st.markdown("### 2. Procedimiento de Integración")
-            st.write(f"""
-            La determinación de la antiderivada (integral indefinida) se realiza mediante el **Algoritmo de Risch**. 
-            Este proceso es más complejo que la derivación y sigue estos pasos:
-            1. **Clasificación:** Se identifica si la función es racional, trigonométrica o exponencial.
-            2. **Búsqueda de Primitiva:** Se intenta resolver por métodos clásicos (sustitución, partes o fracciones parciales). Si no es posible, se recurre a funciones especiales.
-            3. **Teorema Fundamental:** Una vez obtenida la primitiva $F(x)$, se evalúa en el intervalo $[{lim_a}, {lim_b}]$ mediante la Regla de Barrow: $F({lim_b}) - F({lim_a})$.
-            """)
-            st.info(
-                "Nota: Al igual que en Symbolab, si la integral es muy compleja, el motor garantiza la solución más simplificada posible.")
-
-        # --- SECCIÓN DE GRÁFICA CON CUADRÍCULA ---
-        st.subheader("📊 Visualización Geométrica")
+        # GRÁFICA CON CUADRÍCULA
+        st.subheader("📊 Visualización")
         f_num = sp.lambdify(x, f, "numpy")
-        x_vals = np.linspace(float(lim_a) - 2, float(lim_b) + 2, 400)
-        y_vals = f_num(x_vals)
-
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(x_vals, y_vals, color="#1E88E5", lw=2, label=f"f(x) = {funcion_input}")
-        ax.fill_between(x_vals, y_vals, where=(x_vals >= lim_a) & (x_vals <= lim_b),
-                        color='#00e676', alpha=0.3, label="Área de Integración")
-
-        # Configuración de Cuadrícula (Grid) y Estética
-        ax.grid(True, which='both', linestyle='--', linewidth=0.5, color='gray', alpha=0.7)
-        ax.axhline(0, color='white', lw=1.2)
-        ax.axvline(0, color='white', lw=1.2)
+        x_v = np.linspace(float(lim_a)-1, float(lim_b)+1, 400)
+        y_v = f_num(x_v)
+        
+        fig, ax = plt.subplots(figsize=(10, 4))
+        ax.plot(x_v, y_v, color="#1E88E5", lw=2)
+        ax.fill_between(x_v, y_v, where=(x_v>=lim_a)&(x_v<=lim_b), color='#00e676', alpha=0.3)
+        ax.grid(True, linestyle='--', alpha=0.6) # CUADRÍCULA
         ax.set_facecolor('#1e1e1e')
         fig.patch.set_facecolor('#0e1117')
-        ax.tick_params(colors='white', labelsize=10)
-        ax.legend()
-
+        ax.tick_params(colors='white')
         st.pyplot(fig)
 
     except Exception as e:
-        st.error(f"Error en el motor CAS: {e}")
-
+        st.error(f"Error: {e}")
